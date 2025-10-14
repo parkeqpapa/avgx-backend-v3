@@ -42,7 +42,7 @@ interface IAVGXToken is IERC20, IERC20Permit, IVotes {
      * @dev Returns the maximum supply
      * @return Maximum supply limit
      */
-    function maxSupply() external view returns (uint256);
+    function maxSupplyAVGX() external view returns (uint256);
 
     /**
      * @dev Pauses all token transfers

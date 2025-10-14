@@ -84,7 +84,8 @@ contract AVGXAMM is AccessControl, Pausable, ReentrancyGuard, IAVGXAMM {
         if (baseIn == 0) revert InvalidAmount();
         to.validateAddress();
 
-        (avgxOut, uint256 fee) = getQuoteMint(baseIn);
+        uint256 fee;
+        (avgxOut, fee) = getQuoteMint(baseIn);
         if (avgxOut < minAvgxOut) revert SlippageExceeded();
 
         // Transfer base asset from user
@@ -124,7 +125,8 @@ contract AVGXAMM is AccessControl, Pausable, ReentrancyGuard, IAVGXAMM {
         if (avgxIn == 0) revert InvalidAmount();
         to.validateAddress();
 
-        (baseOut, uint256 fee) = getQuoteRedeem(avgxIn);
+        uint256 fee;
+        (baseOut, fee) = getQuoteRedeem(avgxIn);
         if (baseOut < minBaseOut) revert SlippageExceeded();
 
         // Burn AVGX tokens

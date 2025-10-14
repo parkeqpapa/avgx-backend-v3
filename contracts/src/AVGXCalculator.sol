@@ -18,6 +18,8 @@ contract AVGXCalculator is AccessControl, Pausable, IAVGXCalculator {
     using Roles for uint256;
     using FixedPointMath for uint256;
 
+    using Roles for address;
+
     IAVGXOracleRouter public immutable oracleRouter;
     
     Component[] private _fiatComponents;
@@ -32,8 +34,8 @@ contract AVGXCalculator is AccessControl, Pausable, IAVGXCalculator {
      * @param oracleRouter_ Address of the oracle router
      */
     constructor(address accessController, address oracleRouter_) {
-        accessController.validateAddress();
-        oracleRouter_.validateAddress();
+        Roles.validateAddress(accessController);
+        Roles.validateAddress(oracleRouter_);
         
         _grantRole(DEFAULT_ADMIN_ROLE, accessController);
         oracleRouter = IAVGXOracleRouter(oracleRouter_);

@@ -19,7 +19,7 @@ import "./libraries/Roles.sol";
 contract AVGXToken is ERC20, ERC20Permit, ERC20Votes, ERC20Burnable, ERC20Pausable, AccessControl, IAVGXToken {
     using Roles for address;
 
-    uint256 private _maxSupply;
+    uint256 private _maxSupplyAVGX;
     bool private _maxSupplySet;
 
     /**
@@ -42,7 +42,7 @@ contract AVGXToken is ERC20, ERC20Permit, ERC20Votes, ERC20Burnable, ERC20Pausab
     function mint(address to, uint256 amount) external onlyRole(Roles.MINTER_ROLE) {
         to.validateAddress();
         
-        if (_maxSupplySet && totalSupply() + amount > _maxSupply) {
+        if (_maxSupplySet && totalSupply() + amount > _maxSupplyAVGX) {
             revert MaxSupplyExceeded();
         }
         
@@ -69,7 +69,7 @@ contract AVGXToken is ERC20, ERC20Permit, ERC20Votes, ERC20Burnable, ERC20Pausab
      */
     function setMaxSupply(uint256 maxSupply_) external onlyRole(Roles.GOVERNOR_ROLE) {
         if (_maxSupplySet) revert MaxSupplyAlreadySet();
-        _maxSupply = maxSupply_;
+        _maxSupplyAVGX = maxSupply_;
         _maxSupplySet = true;
         emit MaxSupplySet(maxSupply_);
     }
@@ -78,8 +78,8 @@ contract AVGXToken is ERC20, ERC20Permit, ERC20Votes, ERC20Burnable, ERC20Pausab
      * @dev Returns the maximum supply
      * @return Maximum supply limit
      */
-    function maxSupply() external view returns (uint256) {
-        return _maxSupply;
+    function maxSupplyAVGX() external view returns (uint256) {
+        return _maxSupplyAVGX;
     }
 
     /**
@@ -115,7 +115,7 @@ contract AVGXToken is ERC20, ERC20Permit, ERC20Votes, ERC20Burnable, ERC20Pausab
     function nonces(address owner)
         public
         view
-        override(ERC20Permit, Nonces)
+        override(ERC20Permit, Nonces, IERC20Permit)
         returns (uint256)
     {
         return super.nonces(owner);
@@ -128,5 +128,17 @@ contract AVGXToken is ERC20, ERC20Permit, ERC20Votes, ERC20Burnable, ERC20Pausab
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function MINTER_ROLE() public pure returns (bytes32) {
+        return Roles.MINTER_ROLE;
+    }
+
+    function GOVERNOR_ROLE() public pure returns (bytes32) {
+        return Roles.GOVERNOR_ROLE;
+    }
+
+    function PAUSER_ROLE() public pure returns (bytes32) {
+        return Roles.PAUSER_ROLE;
     }
 }

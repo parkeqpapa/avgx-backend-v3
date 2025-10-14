@@ -54,9 +54,9 @@ contract AVGXAccessController is AccessControl {
      * @dev Checks if an account has any of the specified roles
      * @param account Account to check
      * @param roles Array of roles to check
-     * @return hasAnyRole True if account has any of the roles
+     * @return result True if account has any of the roles
      */
-    function hasAnyRole(address account, bytes32[] calldata roles) external view returns (bool hasAnyRole) {
+    function hasAnyRole(address account, bytes32[] calldata roles) external view returns (bool result) {
         for (uint256 i = 0; i < roles.length; i++) {
             if (hasRole(roles[i], account)) {
                 return true;
