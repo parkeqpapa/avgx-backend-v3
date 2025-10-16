@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers, keccak256, toUtf8Bytes } from "ethers";
+import { ethers } from "ethers";
 import hre from "hardhat";
 
 describe("AVGXToken", function () {
