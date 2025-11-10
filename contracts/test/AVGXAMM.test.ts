@@ -44,24 +44,27 @@ describe("AVGXAMM", function () {
 
     // Deploy AVGXVault
     const AVGXVault = await hre.ethers.getContractFactory("AVGXVault");
-    vault = await AVGXVault.deploy(owner.address, await baseAsset.getAddress(), owner.address); // Using owner as dummy amm
+    vault = await AVGXVault.deploy(await baseAsset.getAddress());
 
     // Deploy AVGXAMM
     const AVGXAMM = await hre.ethers.getContractFactory("AVGXAMM");
     amm = await AVGXAMM.deploy(
-      owner.address,
       await avgxToken.getAddress(),
       await calculator.getAddress(),
-      await baseAsset.getAddress(),
-      await vault.getAddress()
+      await baseAsset.getAddress()
     );
 
+    // Set circular dependencies
+    const GOVERNOR_ROLE_HASH = ethers.keccak256(ethers.toUtf8Bytes("GOVERNOR_ROLE"));
+    await vault.grantRole(GOVERNOR_ROLE_HASH, owner.address);
+    await amm.grantRole(GOVERNOR_ROLE_HASH, owner.address);
+    await vault.connect(owner).setAmm(await amm.getAddress());
+    await amm.connect(owner).setVault(await vault.getAddress());
     // Grant MINTER_ROLE to AMM in AVGXToken
     const MINTER_ROLE = await avgxToken.MINTER_ROLE();
     await avgxToken.grantRole(MINTER_ROLE, await amm.getAddress());
 
     // Grant GOVERNOR_ROLE to AMM in Vault
-    const GOVERNOR_ROLE_HASH = ethers.keccak256(ethers.toUtf8Bytes("GOVERNOR_ROLE"));
     await vault.grantRole(GOVERNOR_ROLE_HASH, await amm.getAddress());
 
     // Grant GOVERNOR_ROLE and PAUSER_ROLE in AMM
@@ -84,6 +87,11 @@ describe("AVGXAMM", function () {
       const params = await amm.getParams();
       expect(params.feeBps).to.equal(30); // Default fee
       expect(params.spreadBps).to.equal(10); // Default spread
+    });
+
+    it("Should grant MINTER_ROLE to AMM", async function () {
+      const MINTER_ROLE = await avgxToken.MINTER_ROLE();
+      expect(await avgxToken.hasRole(MINTER_ROLE, await amm.getAddress())).to.be.true;
     });
   });
 

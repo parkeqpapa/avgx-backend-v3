@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./libraries/Roles.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Roles} from "./libraries/Roles.sol";
 
 /**
  * @title AVGXVault
@@ -17,7 +17,10 @@ contract AVGXVault is AccessControl {
     using Roles for address;
 
     IERC20 public immutable baseAsset;
-    address public immutable amm;
+    address public amm;
+
+    event AmmSet(address indexed amm);
+
 
     event Deposit(address indexed from, uint256 amount);
     event Withdraw(address indexed to, uint256 amount);
@@ -25,25 +28,23 @@ contract AVGXVault is AccessControl {
     error OnlyAMM();
     error InsufficientBalance();
 
-    modifier onlyAMM() {
-        if (msg.sender != amm) revert OnlyAMM();
-        _;
-    }
 
     /**
      * @dev Constructor initializes the vault
-     * @param accessController Address of the access controller
      * @param baseAsset_ Address of the base asset
-     * @param amm_ Address of the AMM contract
      */
-    constructor(address accessController, address baseAsset_, address amm_) {
-        accessController.validateAddress();
+    constructor(address baseAsset_) {
         baseAsset_.validateAddress();
-        amm_.validateAddress();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, accessController);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         baseAsset = IERC20(baseAsset_);
+    }
+
+    function setAmm(address amm_) external onlyRole(Roles.GOVERNOR_ROLE) {
+        require(amm == address(0), "AVGXVault: AMM already set");
+        amm_.validateAddress();
         amm = amm_;
+        emit AmmSet(amm_);
     }
 
     /**

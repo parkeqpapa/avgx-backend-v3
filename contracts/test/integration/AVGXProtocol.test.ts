@@ -40,24 +40,26 @@ describe("AVGXProtocol Integration Test", function () {
 
     // Deploy AVGXVault
     const AVGXVault = await hre.ethers.getContractFactory("AVGXVault");
-    vault = await AVGXVault.deploy(owner.address, await baseAsset.getAddress(), owner.address); // Using owner as dummy amm
+    vault = await AVGXVault.deploy(await baseAsset.getAddress());
 
     // Deploy AVGXAMM
     const AVGXAMM = await hre.ethers.getContractFactory("AVGXAMM");
     amm = await AVGXAMM.deploy(
-      owner.address,
       await avgxToken.getAddress(),
       await calculator.getAddress(),
-      await baseAsset.getAddress(),
-      await vault.getAddress()
+      await baseAsset.getAddress()
     );
 
-    // Grant roles
+    // Grant roles and set circular dependencies
+    const GOVERNOR_ROLE = ethers.keccak256(ethers.toUtf8Bytes("GOVERNOR_ROLE"));
+    await vault.connect(owner).grantRole(GOVERNOR_ROLE, owner.address);
+    await amm.connect(owner).grantRole(GOVERNOR_ROLE, owner.address);
+    await vault.connect(owner).setAmm(await amm.getAddress());
+    await amm.connect(owner).setVault(await vault.getAddress());
+
+    // Grant MINTER_ROLE to AMM in AVGXToken
     const MINTER_ROLE = await avgxToken.MINTER_ROLE();
     await avgxToken.connect(owner).grantRole(MINTER_ROLE, await amm.getAddress());
-
-    const GOVERNOR_ROLE = ethers.keccak256(ethers.toUtf8Bytes("GOVERNOR_ROLE"));
-    await vault.connect(owner).grantRole(GOVERNOR_ROLE, await amm.getAddress());
 
     // Mint some base asset to user1
     await baseAsset.mint(user1.address, ethers.parseUnits("10000", 6));

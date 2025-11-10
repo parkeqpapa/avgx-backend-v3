@@ -34,20 +34,23 @@ describe("Governance Integration Test", function () {
 
     // Deploy AVGXVault
     const AVGXVault = await hre.ethers.getContractFactory("AVGXVault");
-    const vault = await AVGXVault.deploy(owner.address, await baseAsset.getAddress(), owner.address); // Using owner as dummy amm
+    const vault = await AVGXVault.deploy(await baseAsset.getAddress());
 
     // Deploy AVGXAMM
     const AVGXAMM = await hre.ethers.getContractFactory("AVGXAMM");
     amm = await AVGXAMM.deploy(
-      owner.address,
       await avgxToken.getAddress(),
       await calculator.getAddress(),
-      await baseAsset.getAddress(),
-      await vault.getAddress()
+      await baseAsset.getAddress()
     );
 
-    // Grant roles
+    // Set circular dependencies
     const GOVERNOR_ROLE = ethers.keccak256(ethers.toUtf8Bytes("GOVERNOR_ROLE"));
+    await vault.connect(owner).grantRole(GOVERNOR_ROLE, owner.address);
+    await amm.connect(owner).grantRole(GOVERNOR_ROLE, owner.address);
+    await vault.connect(owner).setAmm(await amm.getAddress());
+    await amm.connect(owner).setVault(await vault.getAddress());
+    // Grant roles
     const PAUSER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("PAUSER_ROLE"));
 
     await amm.connect(owner).grantRole(GOVERNOR_ROLE, governor.address);

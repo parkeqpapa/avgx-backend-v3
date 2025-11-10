@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/IAVGXAMM.sol";
-import "./interfaces/IAVGXToken.sol";
-import "./interfaces/IAVGXCalculator.sol";
-import "./AVGXVault.sol";
-import "./libraries/Roles.sol";
-import "./libraries/FixedPointMath.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IAVGXAMM} from "./interfaces/IAVGXAMM.sol";
+import {IAVGXToken} from "./interfaces/IAVGXToken.sol";
+import {IAVGXCalculator} from "./interfaces/IAVGXCalculator.sol";
+import {AVGXVault} from "./AVGXVault.sol";
+import {Roles} from "./libraries/Roles.sol";
+import {FixedPointMath} from "./libraries/FixedPointMath.sol";
 
 /**
  * @title AVGXAMM
@@ -28,45 +28,44 @@ contract AVGXAMM is AccessControl, Pausable, ReentrancyGuard, IAVGXAMM {
     IAVGXToken public immutable avgxToken;
     IAVGXCalculator public immutable calculator;
     IERC20 public immutable baseAsset;
-    AVGXVault public immutable vault;
+    AVGXVault public vault;
 
     AMMParams private _params;
 
     /**
      * @dev Constructor initializes the AMM
-     * @param accessController Address of the access controller
      * @param avgxToken_ Address of the AVGX token
      * @param calculator_ Address of the AVGX calculator
      * @param baseAsset_ Address of the base asset (e.g., USDC)
-     * @param vault_ Address of the vault
      */
     constructor(
-        address accessController,
         address avgxToken_,
         address calculator_,
-        address baseAsset_,
-        address vault_
+        address baseAsset_
     ) {
-        accessController.validateAddress();
         avgxToken_.validateAddress();
         calculator_.validateAddress();
         baseAsset_.validateAddress();
-        vault_.validateAddress();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, accessController);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         
         avgxToken = IAVGXToken(avgxToken_);
         calculator = IAVGXCalculator(calculator_);
         baseAsset = IERC20(baseAsset_);
-        vault = AVGXVault(vault_);
 
         // Set default parameters
         _params = AMMParams({
             feeBps: Roles.DEFAULT_FEE_BPS,
             spreadBps: Roles.DEFAULT_SPREAD_BPS,
-            feeRecipient: accessController,
-            treasury: accessController
+            feeRecipient: msg.sender,
+            treasury: msg.sender
         });
+    }
+
+    function setVault(address vault_) external onlyRole(Roles.GOVERNOR_ROLE) {
+        require(address(vault) == address(0), "AVGXAMM: Vault already set");
+        vault_.validateAddress();
+        vault = AVGXVault(vault_);
     }
 
     /**
@@ -129,14 +128,14 @@ contract AVGXAMM is AccessControl, Pausable, ReentrancyGuard, IAVGXAMM {
         (baseOut, fee) = getQuoteRedeem(avgxIn);
         if (baseOut < minBaseOut) revert SlippageExceeded();
 
-        // Burn AVGX tokens
-        avgxToken.burnFrom(msg.sender, avgxIn);
-
         // Calculate net base amount after fees
         uint256 netBaseOut = baseOut - fee;
-
         // Check vault has sufficient liquidity
         if (vault.getBalance() < netBaseOut) revert InsufficientLiquidity();
+
+
+        // Burn AVGX tokens
+        avgxToken.burnFrom(msg.sender, avgxIn);
 
         // Transfer base asset to user
         vault.withdraw(to, netBaseOut);

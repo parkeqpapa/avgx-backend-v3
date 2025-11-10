@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import "./interfaces/IAVGXOracleRouter.sol";
-import "./libraries/Roles.sol";
-import "./libraries/FixedPointMath.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {IAVGXOracleRouter} from "./interfaces/IAVGXOracleRouter.sol";
+import {Roles} from "./libraries/Roles.sol";
+import {FixedPointMath} from "./libraries/FixedPointMath.sol";
 
 /**
  * @title AVGXOracleRouter
@@ -22,11 +22,9 @@ contract AVGXOracleRouter is AccessControl, IAVGXOracleRouter {
 
     /**
      * @dev Constructor initializes the oracle router
-     * @param accessController Address of the access controller
      */
-    constructor(address accessController) {
-        accessController.validateAddress();
-        _grantRole(DEFAULT_ADMIN_ROLE, accessController);
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /**

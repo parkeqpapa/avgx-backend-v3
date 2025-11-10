@@ -1,20 +1,19 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "./interfaces/IAVGXCalculator.sol";
-import "./interfaces/IAVGXOracleRouter.sol";
-import "./libraries/Roles.sol";
-import "./libraries/FixedPointMath.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {IAVGXCalculator} from "./interfaces/IAVGXCalculator.sol";
+import {IAVGXOracleRouter} from "./interfaces/IAVGXOracleRouter.sol";
+import {Roles} from"./libraries/Roles.sol";
+import {FixedPointMath} from "./libraries/FixedPointMath.sol";
 
-/**
- * @title AVGXCalculator
+/**n
+ * @title AVGXCalculator2
  * @dev Calculates the AVGX index from weighted baskets of fiat and crypto assets
  * @notice Implements the formula: AVGX = sqrt(WF * WC) where WF and WC are weighted averages
  */
-contract AVGXCalculator is AccessControl, Pausable, IAVGXCalculator {
+contract AVGXCalculator2 is AccessControl, Pausable, IAVGXCalculator {
     using Roles for uint256;
     using FixedPointMath for uint256;
 
@@ -46,6 +45,8 @@ contract AVGXCalculator is AccessControl, Pausable, IAVGXCalculator {
      * @return priceE18 Index value in 1e18 format
      */
     function currentIndex() external view whenNotPaused returns (uint256 priceE18) {
+        _validateWeights();
+        
         uint256 wf = _calculateWeightedAverage(_fiatComponents);
         uint256 wc = _calculateWeightedAverage(_cryptoComponents);
         
@@ -134,7 +135,6 @@ contract AVGXCalculator is AccessControl, Pausable, IAVGXCalculator {
             _cryptoComponents[index - 1].weightBps = weightBps;
         }
         
-        _validateWeights();
         emit ComponentsUpdated(_fiatComponents, _cryptoComponents);
     }
 
@@ -212,7 +212,6 @@ contract AVGXCalculator is AccessControl, Pausable, IAVGXCalculator {
             _cryptoIndexes[assetId] = _cryptoComponents.length;
         }
         
-        _validateWeights();
         emit ComponentsUpdated(_fiatComponents, _cryptoComponents);
     }
 

@@ -11,7 +11,7 @@ describe("AVGXOracleRouter", function () {
     const [owner, oracleManager, user1] = await hre.ethers.getSigners();
 
     const AVGXOracleRouter = await hre.ethers.getContractFactory("AVGXOracleRouter");
-    const oracleRouter = await AVGXOracleRouter.deploy(owner.address);
+    const oracleRouter = await AVGXOracleRouter.deploy();
 
     await oracleRouter.grantRole(ORACLE_MANAGER_ROLE, oracleManager.address);
 

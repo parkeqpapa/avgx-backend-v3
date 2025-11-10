@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./libraries/Roles.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Roles} from "./libraries/Roles.sol";
 
 /**
  * @title AVGXAccessController
